@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tris Lab 10, Il torneo finale</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+/* Layout: quaderno a quadretti, colonna unica di lettura; X = penna blu, O = penna rossa, evidenziatore giallo per i consigli */
+:root {
+  --paper: #fbfcfe;
+  --rule: #e3e9f3;
+  --card: #ffffff;
+  --ink: #1b2742;
+  --muted: #5a6681;
+  --line: #d5dceb;
+  --x: #2350c4;
+  --o: #cf3f2c;
+  --hl: #ffe27a;
+  --hl-ink: #1b2742;
+  --ok: #1d8556;
+  --ok-bg: #e4f5ec;
+  --bad: #c0392b;
+  --bad-bg: #fbe9e7;
+  --code-bg: #f1f4fa;
+  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --body: "Atkinson Hyperlegible", "Verdana", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", "Consolas", "Menlo", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #111726; --rule: #1a2236; --card: #172033; --ink: #e5eaf5; --muted: #9aa5bd;
+    --line: #2a3550; --x: #82a6ff; --o: #ff8270; --hl: #e9c94e; --ok: #4fd393; --ok-bg: #12352a;
+    --bad: #ff8a7a; --bad-bg: #3a1d1d; --code-bg: #0e1422; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #111726; --rule: #1a2236; --card: #172033; --ink: #e5eaf5; --muted: #9aa5bd;
+  --line: #2a3550; --x: #82a6ff; --o: #ff8270; --hl: #e9c94e; --ok: #4fd393; --ok-bg: #12352a;
+  --bad: #ff8a7a; --bad-bg: #3a1d1d; --code-bg: #0e1422; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(var(--rule) 1px, transparent 1px),
+    linear-gradient(90deg, var(--rule) 1px, transparent 1px);
+  background-size: 24px 24px;
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 17px;
+  line-height: 1.6;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--card); }
+.wrap {
+  max-width: 880px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+h1, h2, h3 { font-family: var(--display); line-height: 1.15; text-wrap: balance; margin: 0; }
+p { margin: 0; }
+.grid { display: grid; gap: 8px; }
+code, kbd { font-family: var(--mono); font-size: .88em; background: var(--code-bg); padding: .1em .35em; border-radius: 4px; border: 1px solid var(--line); }
+a { color: var(--x); }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--x); outline-offset: 2px; }
+
+/* Barra in alto */
+.bar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  background: var(--card); border-bottom: 2px solid var(--ink);
+}
+.bar .wrap { display: flex; align-items: center; gap: 16px; padding-block: 10px; }
+.bar-title { font-family: var(--display); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1; }
+.bar-prog { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.meter { width: 120px; height: 10px; border: 2px solid var(--ink); border-radius: 6px; overflow: hidden; background: var(--paper); }
+.meter i { display: block; height: 100%; width: 0; background: var(--x); transition: width .4s; }
+
+/* Intestazione */
+.hero { padding-block: 40px 28px; }
+.eyebrow { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.track { display: flex; gap: 6px; margin: 18px 0 22px; flex-wrap: wrap; }
+.track span, .track a { text-decoration: none;
+
+  width: 34px; height: 34px; display: grid; place-items: center; border: 2px solid var(--line);
+  border-radius: 6px; font-family: var(--display); font-weight: 700; font-size: 15px; color: var(--muted); background: var(--card);
+}
+.track .past { border-color: var(--ink); color: var(--ink); }
+.track .now { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.hero h1 { font-size: clamp(36px, 7vw, 60px); font-weight: 800; letter-spacing: -.02em; }
+.hero h1 .n { display: block; font-size: .42em; color: var(--o); letter-spacing: 0; margin-bottom: 4px; }
+.hero .lead { font-size: 20px; margin-top: 14px; max-width: 62ch; color: var(--muted); }
+.goal {
+  margin-top: 26px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+  background: var(--card); border: 2px solid var(--ink); border-radius: 10px; padding: 20px 22px;
+}
+.goal h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .07em; margin-bottom: 8px; color: var(--muted); }
+.goal ul { margin: 0; padding-left: 20px; }
+.goal .time { font-family: var(--display); font-size: 28px; font-weight: 800; }
+.plan { list-style: none; padding: 0; margin: 0; font-size: 15px; }
+.plan li { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px dashed var(--line); padding: 3px 0; }
+.plan li b { font-variant-numeric: tabular-nums; color: var(--muted); font-weight: 400; white-space: nowrap; }
+
+/* Fasi */
+.phase { padding-block: 34px 8px; display: grid; gap: 18px; }
+.phase-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; border-top: 2px solid var(--ink); padding-top: 16px; }
+.phase-head .k { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--o); }
+.phase-head h2 { font-size: clamp(24px, 4vw, 32px); font-weight: 800; flex: 1 1 100%; }
+.phase-head .min { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.text { max-width: 68ch; display: grid; gap: 12px; }
+.text ul, .text ol { margin: 0; padding-left: 22px; }
+pre.ex {
+  margin: 0; background: var(--code-bg); border: 1px solid var(--line); border-left: 4px solid var(--x);
+  border-radius: 6px; padding: 14px 16px; font-family: var(--mono); font-size: 14px; line-height: 1.55; overflow-x: auto;
+}
+.tip {
+  max-width: 68ch; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start;
+  background: linear-gradient(transparent 0, transparent 2px, color-mix(in srgb, var(--hl) 38%, var(--card)) 2px);
+  border-radius: 6px; padding: 12px 16px; border: 1px solid color-mix(in srgb, var(--hl) 70%, var(--line));
+}
+.tip .tag { font-family: var(--display); font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; background: var(--hl); color: var(--hl-ink); padding: 2px 8px; border-radius: 4px; margin-top: 2px; }
+
+/* Attività */
+.act { background: var(--card); border: 2px solid var(--line); border-radius: 10px; padding: 18px 20px; display: grid; gap: 14px; min-width: 0; }
+.act.done { border-color: var(--ok); }
+.act-head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.act-type { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; border: 2px solid var(--ink); border-radius: 4px; padding: 1px 7px; }
+.act-state { margin-left: auto; font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.act.done .act-state { color: var(--ok); font-weight: 700; }
+.act-state .dot { width: 14px; height: 14px; border: 2px solid currentColor; border-radius: 50%; }
+.act.done .act-state .dot { background: currentColor; }
+.q { font-weight: 700; font-size: 18px; }
+.why { border-left: 4px solid var(--ok); background: var(--ok-bg); padding: 10px 14px; border-radius: 0 6px 6px 0; }
+.nope { border-left: 4px solid var(--bad); background: var(--bad-bg); padding: 10px 14px; border-radius: 0 6px 6px 0; }
+.opts { display: grid; gap: 8px; }
+.btn {
+  border: 2px solid var(--ink); background: var(--card); border-radius: 8px; padding: 8px 14px; text-align: left;
+  font-weight: 600; transition: transform .1s, background .15s;
+}
+.btn:hover { transform: translateY(-1px); background: var(--code-bg); }
+.btn.main { background: var(--ink); color: var(--paper); }
+.btn.main:hover { background: var(--x); border-color: var(--x); }
+.btn.ok { border-color: var(--ok); background: var(--ok-bg); }
+.btn.bad { border-color: var(--bad); background: var(--bad-bg); animation: shake .3s; }
+.btn[disabled] { opacity: .55; cursor: default; transform: none; }
+.btn.mono { font-family: var(--mono); font-size: 14px; font-weight: 500; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+@keyframes shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+
+/* Abbina */
+.match { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
+.match .col { display: grid; gap: 8px; align-content: start; }
+.match .btn.sel { background: var(--hl); color: var(--hl-ink); }
+
+/* Ordina */
+.order { display: grid; gap: 6px; }
+.order .it { display: flex; align-items: center; gap: 8px; border: 2px solid var(--line); border-radius: 8px; padding: 4px 6px 4px 12px; background: var(--paper); min-width: 0; }
+.order .it code { background: none; border: 0; padding: 0; flex: 1; white-space: pre; overflow-x: auto; }
+.order .it.ok { border-color: var(--ok); }
+.order .it.bad { border-color: var(--bad); }
+.mv { border: 2px solid var(--line); background: var(--card); border-radius: 6px; width: 34px; height: 30px; display: grid; place-items: center; }
+.mv svg { width: 14px; height: 14px; }
+
+/* Completa */
+.fill { font-family: var(--mono); font-size: 15px; background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 14px; white-space: pre-wrap; line-height: 2.1; overflow-x: auto; }
+.fill input { font: inherit; border: 0; border-bottom: 2px solid var(--x); background: var(--card); color: var(--ink); padding: 0 4px; border-radius: 3px 3px 0 0; }
+.fill input.ok { border-color: var(--ok); background: var(--ok-bg); }
+.fill input.bad { border-color: var(--bad); background: var(--bad-bg); }
+
+/* Caccia al bug */
+.bug { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; overflow-x: auto; }
+.bug button { display: flex; width: 100%; gap: 14px; border: 0; background: none; text-align: left; font-family: var(--mono); font-size: 14px; padding: 4px 12px; white-space: pre; }
+.bug button:hover { background: color-mix(in srgb, var(--hl) 35%, transparent); }
+.bug button .ln { color: var(--muted); width: 2ch; text-align: right; flex: none; }
+.bug button.ok { background: var(--ok-bg); }
+.bug button.bad { background: var(--bad-bg); }
+
+/* Editor */
+.ide { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 12px; }
+.pane { display: grid; grid-template-rows: auto 1fr; border: 2px solid var(--ink); border-radius: 8px; overflow: hidden; min-width: 0; background: var(--card); }
+.pane-h { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; padding: 6px 10px; border-bottom: 2px solid var(--ink); display: flex; justify-content: space-between; gap: 8px; }
+.pane textarea {
+  width: 100%; min-height: 380px; border: 0; resize: vertical; padding: 12px; font-family: var(--mono); font-size: 13.5px;
+  line-height: 1.55; background: var(--code-bg); color: var(--ink); tab-size: 2; white-space: pre; overflow: auto;
+}
+.pane iframe { width: 100%; height: 100%; min-height: 380px; border: 0; background: #fff; }
+.console { font-family: var(--mono); font-size: 13px; background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px 12px; max-height: 140px; overflow: auto; }
+.console div { border-bottom: 1px dashed var(--line); padding: 2px 0; }
+.console .err { color: var(--bad); }
+.console .empty { color: var(--muted); border: 0; }
+.checks { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; }
+.checks li { display: flex; gap: 10px; align-items: baseline; }
+.checks li::before { content: ""; flex: none; width: 14px; height: 14px; border: 2px solid var(--muted); border-radius: 3px; transform: translateY(2px); }
+.checks li.ok { color: var(--ok); }
+.checks li.ok::before { background: var(--ok); border-color: var(--ok); }
+.hint { background: var(--paper); border: 1px dashed var(--ink); border-radius: 6px; padding: 10px 14px; }
+.hint b { font-family: var(--display); }
+.sol { margin: 0; background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 12px; font-family: var(--mono); font-size: 13px; overflow-x: auto; max-height: 360px; }
+
+/* Tris */
+.tris { display: grid; grid-template-columns: auto 1fr; gap: 22px; align-items: start; }
+.board { display: grid; grid-template-columns: repeat(3, 84px); grid-template-rows: repeat(3, 84px); gap: 0; position: relative; }
+.board button {
+  border: 0; background: none; font-family: var(--display); font-size: 54px; font-weight: 800; line-height: 1; position: relative;
+}
+.board button:nth-child(3n+1), .board button:nth-child(3n+2) { border-right: 3px solid var(--ink); }
+.board button:nth-child(-n+6) { border-bottom: 3px solid var(--ink); }
+.board button.X { color: var(--x); }
+.board button.O { color: var(--o); }
+.board button.win { background: color-mix(in srgb, var(--hl) 55%, transparent); }
+.board button .ev { position: absolute; inset: auto 4px 4px auto; font-family: var(--mono); font-size: 13px; font-weight: 700; padding: 0 4px; border-radius: 3px; background: var(--code-bg); }
+.board button .ev.p { color: var(--ok); }
+.board button .ev.m { color: var(--bad); }
+.board button .ev.z { color: var(--muted); }
+.side { display: grid; gap: 12px; align-content: start; }
+.status { font-family: var(--display); font-size: 22px; font-weight: 800; }
+.score { display: grid; grid-template-columns: repeat(3, 1fr); border: 2px solid var(--ink); border-radius: 8px; overflow: hidden; text-align: center; }
+.score div { padding: 6px; border-right: 2px solid var(--ink); }
+.score div:last-child { border-right: 0; }
+.score b { display: block; font-family: var(--display); font-size: 26px; font-variant-numeric: tabular-nums; }
+.score span { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.seg { display: inline-flex; border: 2px solid var(--ink); border-radius: 8px; overflow: hidden; flex-wrap: wrap; }
+.seg button { border: 0; background: var(--card); padding: 5px 12px; font-weight: 600; font-size: 14px; }
+.seg button + button { border-left: 2px solid var(--ink); }
+.seg button.on { background: var(--ink); color: var(--paper); }
+.small { font-size: 14px; color: var(--muted); }
+label.chk { display: flex; gap: 8px; align-items: center; font-size: 15px; }
+
+/* Linee vincenti */
+.combo { display: grid; grid-template-columns: auto 1fr; gap: 22px; align-items: start; }
+.found { display: flex; flex-wrap: wrap; gap: 10px; }
+.mini { display: grid; grid-template-columns: repeat(3, 14px); grid-template-rows: repeat(3, 14px); gap: 2px; }
+.mini i { background: var(--line); border-radius: 2px; }
+.mini i.on { background: var(--o); }
+.board.pick button { font-family: var(--mono); font-size: 16px; color: var(--muted); font-weight: 500; }
+.board.pick button.on { background: color-mix(in srgb, var(--o) 22%, transparent); color: var(--ink); font-weight: 700; }
+
+/* Albero */
+.treebox { overflow-x: auto; padding-bottom: 8px; }
+.tree { display: flex; flex-direction: column; align-items: center; gap: 0; min-width: max-content; }
+.node { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; }
+.kids { display: flex; gap: 6px; position: relative; padding-top: 14px; }
+.kids::before { content: ""; position: absolute; top: 0; left: 12%; right: 12%; border-top: 2px solid var(--line); }
+.kid { display: flex; flex-direction: column; align-items: center; position: relative; }
+.kid::before { content: ""; position: absolute; top: -14px; height: 14px; border-left: 2px solid var(--line); }
+.mb { display: grid; grid-template-columns: repeat(3, 18px); grid-template-rows: repeat(3, 18px); border: 2px solid var(--ink); border-radius: 4px; background: var(--card); }
+.mb i { font-style: normal; font-family: var(--display); font-weight: 800; font-size: 13px; display: grid; place-items: center; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.mb i:nth-child(3n) { border-right: 0; }
+.mb i:nth-child(n+7) { border-bottom: 0; }
+.mb i.X { color: var(--x); }
+.mb i.O { color: var(--o); }
+.mb i.last { background: color-mix(in srgb, var(--hl) 60%, transparent); }
+.who { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
+.who.max { color: var(--o); }
+.who.min { color: var(--x); }
+.val { font-family: var(--mono); font-weight: 700; font-size: 14px; min-width: 44px; height: 28px; border-radius: 6px; border: 2px solid var(--ink); background: var(--card); display: grid; place-items: center; }
+.val.leaf { border-style: dashed; }
+.val.ok { border-color: var(--ok); background: var(--ok-bg); }
+.val.bad { border-color: var(--bad); background: var(--bad-bg); }
+.node.best > .mb { outline: 3px solid var(--ok); outline-offset: 2px; }
+
+/* Fine lezione */
+.end { padding-block: 40px 60px; }
+.badge {
+  display: grid; grid-template-columns: auto 1fr; gap: 22px; align-items: center; background: var(--card);
+  border: 2px dashed var(--line); border-radius: 12px; padding: 22px;
+}
+.badge.got { border: 2px solid var(--ink); }
+.stamp { width: 96px; height: 96px; border-radius: 50%; border: 3px solid var(--muted); display: grid; place-items: center; font-family: var(--display); font-weight: 800; font-size: 34px; color: var(--muted); transform: rotate(-8deg); }
+.badge.got .stamp { border-color: var(--o); color: var(--o); }
+.badge h2 { font-size: 26px; }
+.badge ul { margin: 8px 0 0; padding-left: 20px; }
+.next { margin-top: 18px; display: flex; gap: 14px; flex-wrap: wrap; justify-content: space-between; align-items: center; }
+.reset { font-size: 14px; }
+
+@media (max-width: 720px) {
+  .goal { grid-template-columns: 1fr; }
+  .ide { grid-template-columns: 1fr; }
+  .pane textarea, .pane iframe { min-height: 300px; }
+  .tris, .combo { grid-template-columns: 1fr; }
+  .match { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .meter { width: 70px; }
+  .badge { grid-template-columns: 1fr; }
+  .bar-prog .lbl { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+.pager { margin-top: 24px; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.pager a { text-decoration: none; color: var(--ink); }
+.pager a.main { color: var(--paper); }
+.idx { display: grid; gap: 12px; padding-block: 8px 60px; }
+.idx a { display: grid; grid-template-columns: 56px 1fr; gap: 16px; align-items: center; text-decoration: none; color: var(--ink); background: var(--card); border: 2px solid var(--line); border-radius: 10px; padding: 14px 18px; }
+.idx a:hover { border-color: var(--ink); }
+.idx .num { font-family: var(--display); font-weight: 800; font-size: 30px; color: var(--o); text-align: center; }
+.idx h2 { font-size: 21px; }
+.idx p { color: var(--muted); font-size: 15px; }
+
+</style>
+</head>
+<body>
+<script>window.STANDALONE = true;</script>
+<script>
+window.LESSON = {
+  n: 10,
+  title: "Il torneo finale",
+  lead: "Il gioco funziona. Oggi lo rifinisci come un prodotto vero: caccia agli errori, livelli di difficoltà, punteggio. Poi la classe sfida l'AI.",
+  learn: ["Trovare e correggere gli errori (<b>debug</b>)", "Un menu a tendina con <code>&lt;select&gt;</code>", "Livelli di difficoltà mescolando caso e minimax", "Che cosa distingue minimax dalle AI moderne"],
+  phases: [
+    {
+      title: "Caccia al bug", min: 15,
+      body: "<p>Ogni programmatore passa più tempo a correggere errori che a scrivere codice nuovo. Si chiama <b>debug</b>. Il metodo è sempre lo stesso: leggi il messaggio della console, trova la riga indicata, controlla una cosa alla volta.</p>",
+      tip: "Gli errori più frequenti in questo corso: una maiuscola sbagliata (<code>getElementByID</code> invece di <code>getElementById</code>), un <code>=</code> al posto di <code>===</code>, una parentesi graffa non chiusa, una virgoletta dimenticata.",
+      acts: [
+        { type: "bug", q: "La console dice: <code>document.getElementByID is not a function</code>. Quale riga va corretta?", lines: ["const celle = document.querySelectorAll(\".cella\");", "const messaggio = document.getElementByID(\"messaggio\");", "let tabellone = [\"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\"];", "let turno = \"X\";"], bad: 1, why: "JavaScript distingue maiuscole e minuscole: il nome giusto è <code>getElementById</code>, con la <i>d</i> minuscola." },
+        { type: "quiz", q: "La console dice: <code>mossaMiglore is not defined</code>. Che cosa significa?", opts: ["Il computer non ha trovato una mossa", "C'è un errore di battitura: la funzione si chiama diversamente", "Minimax non funziona", "Il browser è vecchio"], ok: 1, why: "Manca una <i>i</i>: <code>mossaMiglore</code> invece di <code>mossaMigliore</code>. «Not defined» quasi sempre vuol dire un nome scritto male." }
+      ]
+    },
+    {
+      title: "Livelli di difficoltà", min: 25,
+      body: "<p>Un'AI che vince sempre non è divertente per tutti. Aggiungiamo tre livelli: <b>facile</b> gioca sempre a caso, <b>medio</b> lancia una moneta a ogni mossa, <b>impossibile</b> usa sempre minimax. Il livello si sceglie da un menu a tendina.</p>",
+      code: `<select id="livello">
+  <option value="facile">Facile</option>
+  <option value="medio">Medio</option>
+  <option value="impossibile" selected>Impossibile</option>
+</select>
+
+function mossaComputer() {
+  const livello = document.getElementById("livello").value;
+  if (livello === "facile") return mossaCasuale(tabellone);
+  if (livello === "medio" && Math.random() < 0.5) return mossaCasuale(tabellone);
+  return mossaMigliore(tabellone);
+}`,
+      tip: "Aggiungi anche un punteggio: tre variabili (vittorie, pareggi, sconfitte) che aumentano quando finisce una partita, e un paragrafo che le mostra. Pensa a dove nel codice sai con certezza chi ha vinto.",
+      acts: [
+        { type: "play", file: "tris.html", q: "Aggiungi il menu dei livelli e il punteggio al tuo tris.",
+          start: `<!DOCTYPE html>
+<html>
+<head>
+  <title>Il mio Tris</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; background: #f4f6fb; }
+    #griglia { display: grid; grid-template-columns: repeat(3, 100px); gap: 6px; justify-content: center; }
+    .cella { height: 100px; background: white; border-radius: 8px; font-size: 60px; line-height: 100px; cursor: pointer; }
+    .cella:hover { background: #ffeeba; }
+    .X { color: royalblue; }
+    .O { color: crimson; }
+  </style>
+</head>
+<body>
+  <h1>Tris</h1>
+  <\!-- 1. aggiungi qui il menu <select id="livello"> -->
+
+  <div id="griglia">
+    <div class="cella"></div>
+    <div class="cella"></div>
+    <div class="cella"></div>
+    <div class="cella"></div>
+    <div class="cella"></div>
+    <div class="cella"></div>
+    <div class="cella"></div>
+    <div class="cella"></div>
+    <div class="cella"></div>
+  </div>
+  <p id="messaggio">Tocca a: X</p>
+  <\!-- 2. aggiungi qui un paragrafo per il punteggio -->
+
+  <button id="nuova">Nuova partita</button>
+
+  <script>
+    const celle = document.querySelectorAll(".cella");
+    const messaggio = document.getElementById("messaggio");
+    const LINEE = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+    let tabellone, turno, finita;
+
+    function vincitore(t) {
+      for (const linea of LINEE) {
+        const a = linea[0], b = linea[1], c = linea[2];
+        if (t[a] !== "" && t[a] === t[b] && t[a] === t[c]) { return t[a]; }
+      }
+      if (t.includes("")) { return null; }
+      return "pareggio";
+    }
+
+    function mossaCasuale(t) {
+      const libere = [];
+      for (let i = 0; i < 9; i++) { if (t[i] === "") { libere.push(i); } }
+      return libere[Math.floor(Math.random() * libere.length)];
+    }
+
+    function minimax(t, giocatore) {
+      const v = vincitore(t);
+      if (v === "O") return 1;
+      if (v === "X") return -1;
+      if (v === "pareggio") return 0;
+      let migliore = (giocatore === "O") ? -Infinity : Infinity;
+      for (let i = 0; i < 9; i++) {
+        if (t[i] !== "") continue;
+        t[i] = giocatore;
+        const p = minimax(t, giocatore === "O" ? "X" : "O");
+        t[i] = "";
+        if (giocatore === "O") migliore = Math.max(migliore, p);
+        else migliore = Math.min(migliore, p);
+      }
+      return migliore;
+    }
+
+    function mossaMigliore(t) {
+      let mossa = -1, record = -Infinity;
+      for (let i = 0; i < 9; i++) {
+        if (t[i] !== "") continue;
+        t[i] = "O";
+        const p = minimax(t, "X");
+        t[i] = "";
+        if (p > record) { record = p; mossa = i; }
+      }
+      return mossa;
+    }
+
+    // 3. scrivi qui la funzione mossaComputer() che guarda il livello
+
+
+    function gioca(i) {
+      tabellone[i] = turno;
+      celle[i].textContent = turno;
+      celle[i].classList.add(turno);
+      const v = vincitore(tabellone);
+      // 4. aggiorna il punteggio quando la partita finisce
+      if (v === "pareggio") { messaggio.textContent = "Pareggio!"; finita = true; return; }
+      if (v !== null) { messaggio.textContent = "Ha vinto " + v + "!"; finita = true; return; }
+      if (turno === "X") { turno = "O"; } else { turno = "X"; }
+      messaggio.textContent = "Tocca a: " + turno;
+    }
+
+    function nuovaPartita() {
+      tabellone = ["", "", "", "", "", "", "", "", ""];
+      turno = "X";
+      finita = false;
+      celle.forEach(function (cella) { cella.textContent = ""; cella.classList.remove("X", "O"); });
+      messaggio.textContent = "Tocca a: X";
+    }
+
+    celle.forEach(function (cella, i) {
+      cella.addEventListener("click", function () {
+        if (finita || turno === "O" || tabellone[i] !== "") { return; }
+        gioca(i);
+        if (!finita) {
+          setTimeout(function () { gioca(mossaMigliore(tabellone)); }, 500);
+        }
+      });
+    });
+    document.getElementById("nuova").addEventListener("click", nuovaPartita);
+    nuovaPartita();
+  <\/script>
+</body>
+</html>`,
+          checks: [
+            { t: "Un menu <code>&lt;select id=\"livello\"&gt;</code> con almeno 3 opzioni", re: /<option/gi, count: 3 },
+            { t: "La funzione <code>mossaComputer()</code> legge il livello con <code>.value</code>", re: /function\s+mossaComputer[\s\S]*getElementById\(\s*["']livello["']\s*\)\.value/ },
+            { t: "Il livello medio usa <code>Math.random() &lt; 0.5</code>", re: /Math\.random\(\)\s*<\s*0?\.5/ },
+            { t: "Il computer gioca con <code>gioca(mossaComputer())</code>", re: /gioca\(\s*mossaComputer\(\s*\)\s*\)/ },
+            { t: "Tre contatori per il punteggio", re: /let\s+\w+\s*=\s*0[\s\S]*let\s+\w+\s*=\s*0[\s\S]*let\s+\w+\s*=\s*0|let\s+\w+\s*=\s*0\s*,\s*\w+\s*=\s*0\s*,\s*\w+\s*=\s*0/ },
+            { t: "Il punteggio viene mostrato nella pagina", re: /getElementById\(\s*["']punteggio["']\s*\)/ },
+            { t: "Sfida extra: scegliere chi inizia la partita", re: /(chiInizia|inizia|primo)/i, extra: true }
+          ],
+          hints: [
+            "Al punto 1 copia il <code>&lt;select&gt;</code> della spiegazione. Al punto 2: <code>&lt;p id=\"punteggio\"&gt;&lt;/p&gt;</code>",
+            "Al punto 3 copia la funzione <code>mossaComputer</code> della spiegazione. Poi, in fondo, nel click, sostituisci <code>gioca(mossaMigliore(tabellone))</code> con <code>gioca(mossaComputer())</code>.",
+            "Per il punteggio crea vicino a <code>let tabellone</code> tre variabili: <code>let vinte = 0, pari = 0, perse = 0;</code>",
+            "Scrivi una funzione <code>mostraPunteggio()</code> che fa <code>document.getElementById(\"punteggio\").textContent = \"Tu \" + vinte + \" · Pari \" + pari + \" · Computer \" + perse;</code> e chiamala al punto 4, dopo aver aumentato il contatore giusto.",
+            "Al punto 4: se <code>v === \"pareggio\"</code> aumenti <code>pari</code>, se <code>v === \"X\"</code> aumenti <code>vinte</code>, se <code>v === \"O\"</code> aumenti <code>perse</code>."
+          ],
+          sol: `// nell'HTML
+<select id="livello">
+  <option value="facile">Facile</option>
+  <option value="medio">Medio</option>
+  <option value="impossibile" selected>Impossibile</option>
+</select>
+<p id="punteggio">Tu 0 · Pari 0 · Computer 0</p>
+
+// nello script
+let vinte = 0, pari = 0, perse = 0;
+
+function mostraPunteggio() {
+  document.getElementById("punteggio").textContent =
+    "Tu " + vinte + " · Pari " + pari + " · Computer " + perse;
+}
+
+function mossaComputer() {
+  const livello = document.getElementById("livello").value;
+  if (livello === "facile") return mossaCasuale(tabellone);
+  if (livello === "medio" && Math.random() < 0.5) return mossaCasuale(tabellone);
+  return mossaMigliore(tabellone);
+}
+
+// dentro gioca(), al punto 4
+if (v === "pareggio") pari++;
+if (v === "X") vinte++;
+if (v === "O") perse++;
+if (v !== null) mostraPunteggio();
+
+// nel click
+setTimeout(function () { gioca(mossaComputer()); }, 500);` }
+      ]
+    },
+    {
+      title: "Il torneo: la classe contro l'AI", min: 35,
+      body: "<p>Regole del torneo. Ogni studente gioca 5 partite al livello <b>Impossibile</b>: una partita vinta vale 3 punti (ma non succederà), un pareggio 1 punto, una sconfitta 0. Chi fa più punti vince il torneo. Poi provate a far iniziare il computer: cambia qualcosa?</p>",
+      tip: "Guardate il codice minimax e cercate di capire dove gioca il computer alla prima mossa e perché. Se volete pareggiare sempre, la regola da ricordare è: blocca ogni minaccia, e se puoi prendi il centro.",
+      acts: [
+        { type: "tris", q: "Gioca almeno 5 partite. Puoi cambiare livello e scegliere chi inizia.", levels: ["facile", "medio", "impossibile"], starter: true, need: 5 }
+      ]
+    },
+    {
+      title: "Che cosa abbiamo costruito", min: 15,
+      body: "<p>In dieci lezioni sei passato da una pagina bianca a un programma che prende decisioni. Minimax è una delle idee più antiche dell'intelligenza artificiale: è stata studiata negli anni Quaranta e Cinquanta per gli scacchi. Le AI di oggi, come quelle che riconoscono le immagini o scrivono testi, funzionano in modo diverso: invece di esplorare tutte le possibilità, <b>imparano</b> da milioni di esempi.</p>",
+      acts: [
+        { type: "quiz", q: "Perché minimax da solo non basta per giocare a scacchi?", opts: ["Perché negli scacchi non si può vincere", "Perché le partite possibili sono troppe anche per il computer più veloce", "Perché gli scacchi non hanno regole precise", "Perché i pezzi sono troppo pochi"], ok: 1, why: "Negli scacchi le partite possibili sono più degli atomi dell'universo osservabile. I programmi di scacchi guardano avanti solo qualche mossa e poi stimano chi è in vantaggio." },
+        { type: "quiz", q: "Qual è la differenza principale tra la nostra AI e un'AI che impara dagli esempi?", opts: ["La nostra è scritta in JavaScript", "La nostra segue regole e calcoli scritti da noi, l'altra trova da sola le regole nei dati", "Non c'è nessuna differenza", "La nostra è più grande"], ok: 1, why: "Esatto. Noi abbiamo scritto ogni passo del ragionamento. Un'AI che apprende riceve esempi e regola da sola i suoi calcoli. Entrambe, però, non fanno magie: eseguono istruzioni." },
+        { type: "quiz", q: "La nostra AI è imbattibile a tris. È intelligente come una persona?", opts: ["Sì, perché vince sempre", "No: sa fare benissimo una sola cosa e non capisce cosa sta facendo", "Sì, perché pensa in anticipo", "Dipende dal livello"], ok: 1, why: "Sa giocare a tris e nient'altro: non sa che sta giocando, né perché. Ricordatelo ogni volta che senti parlare di intelligenza artificiale." }
+      ]
+    }
+  ],
+  recap: ["Il debug parte sempre dalla console", "Livelli di difficoltà: si mescolano mossa casuale e minimax", "Minimax esplora tutto l'albero: perfetto per il tris, impossibile per gli scacchi", "Le AI moderne imparano dagli esempi invece di provare ogni mossa"],
+  next: "<b>Fine del corso.</b> Hai costruito un sito, un gioco e un'intelligenza artificiale. Copia il tuo <code>tris.html</code> finale e fallo provare a casa: chi riesce a batterlo?"
+};
+
+</script>
+<script>
+(function () {
+  "use strict";
+  var L = window.LESSON;
+  var KEY = "corso-tris-lezione-" + L.n;
+  var state = { done: {}, code: {} };
+  try { var s = JSON.parse(localStorage.getItem(KEY) || "null"); if (s && s.done) state = s; if (!state.code) state.code = {}; } catch (e) {}
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+  function el(tag, attrs) {
+    var e = document.createElement(tag);
+    attrs = attrs || {};
+    for (var k in attrs) {
+      var v = attrs[k];
+      if (v == null) continue;
+      if (k === "class") e.className = v;
+      else if (k === "html") e.innerHTML = v;
+      else if (k === "text") e.textContent = v;
+      else if (k.slice(0, 2) === "on") e.addEventListener(k.slice(2), v);
+      else e.setAttribute(k, v);
+    }
+    for (var i = 2; i < arguments.length; i++) {
+      var c = arguments[i];
+      if (c == null) continue;
+      if (Array.isArray(c)) c.forEach(function (x) { if (x != null) e.append(x); });
+      else e.append(c);
+    }
+    return e;
+  }
+  function shuffle(a) {
+    a = a.slice();
+    for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; }
+    return a;
+  }
+  var UP = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 10 L7 4 L12 10" fill="none" stroke="currentColor" stroke-width="2.4"/></svg>';
+  var DOWN = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 4 L7 10 L12 4" fill="none" stroke="currentColor" stroke-width="2.4"/></svg>';
+
+  /* ---------- registro attività e progressi ---------- */
+  var acts = [];
+  var meterBar, meterTxt, badgeBox;
+  function markDone(id) {
+    if (!state.done[id]) { state.done[id] = true; save(); }
+    var a = acts.filter(function (x) { return x.id === id; })[0];
+    if (a) { a.box.classList.add("done"); a.stateEl.lastChild.textContent = "Completata"; }
+    updateProgress();
+  }
+  function updateProgress() {
+    var n = acts.filter(function (a) { return state.done[a.id]; }).length;
+    meterBar.style.width = (100 * n / acts.length) + "%";
+    meterTxt.textContent = n + "/" + acts.length;
+    if (badgeBox) badgeBox.classList.toggle("got", n === acts.length);
+    if (badgeBox) badgeBox.querySelector(".stamp").textContent = n === acts.length ? "OK" : Math.round(100 * n / acts.length) + "%";
+    if (badgeBox) badgeBox.querySelector("h2").textContent = n === acts.length ? "Lezione " + L.n + " completata" : "Ti mancano " + (acts.length - n) + " attività";
+  }
+
+  var TYPE = { quiz: "Quiz", match: "Abbina", order: "Metti in ordine", fill: "Completa il codice", bug: "Caccia al bug", play: "Scrivi il codice", combos: "Gioco", tree: "Gioco", tris: "Gioca" };
+
+  /* ---------- tipi di attività ---------- */
+  function quiz(a, id, body) {
+    var fb = el("div");
+    var buttons = a.opts.map(function (o, i) {
+      return el("button", { class: "btn", text: o, onclick: function (ev) {
+        var b = ev.currentTarget;
+        if (i === a.ok) {
+          buttons.forEach(function (x) { x.disabled = true; });
+          b.disabled = false; b.classList.add("ok");
+          fb.className = "why"; fb.innerHTML = a.why || "Esatto.";
+          markDone(id);
+        } else {
+          b.classList.remove("bad"); void b.offsetWidth; b.classList.add("bad");
+          fb.className = "nope"; fb.innerHTML = (a.no && a.no[i]) || "Non è questa. Rileggi la domanda e riprova.";
+        }
+      } });
+    });
+    body.append(el("div", { class: "q", html: a.q }), el("div", { class: "opts" }, buttons), fb);
+    if (state.done[id]) { buttons[a.ok].classList.add("ok"); fb.className = "why"; fb.innerHTML = a.why || "Esatto."; }
+  }
+
+  function match(a, id, body) {
+    var left = null, solved = 0, fb = el("div", { class: "small", text: "Clicca un elemento a sinistra, poi quello giusto a destra." });
+    var L1 = a.pairs.map(function (p, i) { return { t: p[0], i: i }; });
+    var R1 = shuffle(a.pairs.map(function (p, i) { return { t: p[1], i: i }; }));
+    var lb = L1.map(function (x) {
+      var b = el("button", { class: "btn mono", text: x.t, onclick: function () {
+        if (b.disabled) return;
+        lb.forEach(function (y) { y.classList.remove("sel"); });
+        b.classList.add("sel"); left = x.i;
+      } });
+      return b;
+    });
+    var rb = R1.map(function (x) {
+      var b = el("button", { class: "btn", text: x.t, onclick: function () {
+        if (b.disabled) return;
+        if (left === null) { fb.textContent = "Prima scegli un elemento della colonna di sinistra."; return; }
+        if (left === x.i) {
+          b.disabled = true; b.classList.add("ok");
+          lb[left].disabled = true; lb[left].classList.remove("sel"); lb[left].classList.add("ok");
+          left = null; solved++;
+          fb.textContent = solved === a.pairs.length ? "" : "Giusto. Avanti con il prossimo.";
+          if (solved === a.pairs.length) { fb.className = "why"; fb.innerHTML = a.why || "Tutte le coppie sono giuste."; markDone(id); }
+        } else {
+          b.classList.remove("bad"); void b.offsetWidth; b.classList.add("bad");
+          fb.textContent = "Non vanno insieme. Prova un'altra risposta.";
+        }
+      } });
+      return b;
+    });
+    body.append(el("div", { class: "q", html: a.q }), el("div", { class: "match" }, el("div", { class: "col" }, lb), el("div", { class: "col" }, rb)), fb);
+    if (state.done[id]) {
+      lb.forEach(function (b) { b.disabled = true; b.classList.add("ok"); });
+      rb.forEach(function (b) { b.disabled = true; b.classList.add("ok"); });
+      fb.className = "why"; fb.innerHTML = a.why || "Tutte le coppie sono giuste.";
+    }
+  }
+
+  function order(a, id, body) {
+    var items = a.items.map(function (t, i) { return { t: t, i: i }; });
+    var cur = shuffle(items);
+    var tries = 0;
+    while (cur.every(function (x, k) { return x.i === k; }) && tries++ < 10) cur = shuffle(items);
+    if (state.done[id]) cur = items;
+    var list = el("div", { class: "order" });
+    var fb = el("div");
+    function render(marks) {
+      list.innerHTML = "";
+      cur.forEach(function (x, k) {
+        var row = el("div", { class: "it" + (marks ? (marks[k] ? " ok" : " bad") : "") },
+          el("code", { text: x.t }),
+          el("button", { class: "mv", html: UP, "aria-label": "Sposta su", onclick: function () { if (k > 0) { var t = cur[k - 1]; cur[k - 1] = cur[k]; cur[k] = t; render(); } } }),
+          el("button", { class: "mv", html: DOWN, "aria-label": "Sposta giù", onclick: function () { if (k < cur.length - 1) { var t = cur[k + 1]; cur[k + 1] = cur[k]; cur[k] = t; render(); } } })
+        );
+        list.append(row);
+      });
+    }
+    render(state.done[id] ? cur.map(function () { return true; }) : null);
+    var check = el("button", { class: "btn main", text: "Controlla l'ordine", onclick: function () {
+      var marks = cur.map(function (x, k) { return x.t === a.items[k]; });
+      render(marks);
+      var wrong = marks.filter(function (m) { return !m; }).length;
+      if (!wrong) { fb.className = "why"; fb.innerHTML = a.why || "Ordine perfetto."; markDone(id); }
+      else { fb.className = "nope"; fb.textContent = wrong === 1 ? "Quasi: c'è una riga fuori posto." : wrong + " righe sono fuori posto (bordo rosso). Spostale e riprova."; }
+    } });
+    body.append(el("div", { class: "q", html: a.q }), list, el("div", { class: "row" }, check), fb);
+    if (state.done[id]) { fb.className = "why"; fb.innerHTML = a.why || "Ordine perfetto."; }
+  }
+
+  function norm(s) { return String(s).trim().replace(/\s+/g, " ").toLowerCase(); }
+  function fill(a, id, body) {
+    var box = el("div", { class: "fill" });
+    var inputs = [];
+    a.parts.forEach(function (p) {
+      if (typeof p === "string") box.append(document.createTextNode(p));
+      else {
+        var w = Math.max.apply(null, p.a.map(function (x) { return x.length; }));
+        var inp = el("input", { type: "text", size: String(Math.max(3, w + 1)), autocomplete: "off", autocapitalize: "off", spellcheck: "false", "aria-label": "spazio da completare" });
+        inp._a = p.a; inputs.push(inp); box.append(inp);
+        if (state.done[id]) { inp.value = p.a[0]; inp.className = "ok"; }
+      }
+    });
+    var fb = el("div");
+    var check = el("button", { class: "btn main", text: "Controlla", onclick: function () {
+      var bad = 0;
+      inputs.forEach(function (inp) {
+        var ok = inp._a.some(function (x) { return norm(x) === norm(inp.value); });
+        inp.className = ok ? "ok" : "bad"; if (!ok) bad++;
+      });
+      if (!bad) { fb.className = "why"; fb.innerHTML = a.why || "Tutto giusto."; markDone(id); }
+      else { fb.className = "nope"; fb.textContent = bad === 1 ? "Manca ancora uno spazio giusto (in rosso)." : bad + " spazi da correggere (in rosso)."; }
+    } });
+    box.addEventListener("keydown", function (e) { if (e.key === "Enter") check.click(); });
+    body.append(el("div", { class: "q", html: a.q }), box, el("div", { class: "row" }, check), fb);
+    if (state.done[id]) { fb.className = "why"; fb.innerHTML = a.why || "Tutto giusto."; }
+  }
+
+  function bug(a, id, body) {
+    var fb = el("div");
+    var box = el("div", { class: "bug" });
+    var btns = a.lines.map(function (t, i) {
+      var b = el("button", { onclick: function () {
+        if (i === a.bad) {
+          btns.forEach(function (x) { x.classList.remove("bad"); });
+          b.classList.add("ok"); fb.className = "why"; fb.innerHTML = a.why; markDone(id);
+        } else { b.classList.add("bad"); fb.className = "nope"; fb.textContent = "Questa riga è corretta. Cerca ancora."; }
+      } }, el("span", { class: "ln", text: String(i + 1) }), el("span", { text: t }));
+      box.append(b); return b;
+    });
+    body.append(el("div", { class: "q", html: a.q }), box, fb);
+    if (state.done[id]) { btns[a.bad].classList.add("ok"); fb.className = "why"; fb.innerHTML = a.why; }
+  }
+
+  /* ---------- editor con anteprima ---------- */
+  function play(a, id, body) {
+    var ta = el("textarea", { id: "code-" + id, spellcheck: "false", autocapitalize: "off", autocomplete: "off", "aria-label": "Editor del codice" });
+    ta.value = state.code[id] != null ? state.code[id] : a.start;
+    var frame = el("iframe", { sandbox: "allow-scripts", title: "Anteprima della pagina" });
+    var cons = el("div", { class: "console", "aria-live": "polite" });
+    var checks = el("ul", { class: "checks" });
+    var cItems = a.checks.map(function (c) { var li = el("li", { html: c.t }); checks.append(li); return li; });
+    var hintBox = el("div", { class: "grid" });
+    var shown = 0;
+    var hintBtn = el("button", { class: "btn", text: "Mi serve un aiuto (1/" + a.hints.length + ")" });
+    var solBox = el("div");
+    hintBtn.addEventListener("click", function () {
+      if (shown < a.hints.length) {
+        hintBox.append(el("div", { class: "hint", html: "<b>Aiuto " + (shown + 1) + ".</b> " + a.hints[shown] }));
+        shown++;
+        hintBtn.textContent = shown < a.hints.length ? "Mi serve un altro aiuto (" + (shown + 1) + "/" + a.hints.length + ")" : (a.sol ? "Mostra una soluzione" : "Hai visto tutti gli aiuti");
+        if (shown >= a.hints.length && !a.sol) hintBtn.disabled = true;
+      } else if (a.sol) {
+        solBox.innerHTML = "";
+        solBox.append(el("p", { class: "small", text: "Una soluzione possibile. Prima di copiarla, confrontala riga per riga con la tua: dov'è la differenza?" }), el("pre", { class: "sol", text: a.sol }));
+        hintBtn.disabled = true;
+      }
+    });
+    var lines = [];
+    function log(t, m) {
+      if (!lines.length) cons.innerHTML = "";
+      lines.push(1);
+      cons.append(el("div", { class: t === "err" ? "err" : "", text: (t === "err" ? "Errore: " : "") + m }));
+      cons.scrollTop = cons.scrollHeight;
+    }
+    window.addEventListener("message", function (e) {
+      if (e.source !== frame.contentWindow || !e.data || e.data.pg !== id) return;
+      log(e.data.t, e.data.m);
+    });
+    function run() {
+      var code = ta.value;
+      lines = []; cons.innerHTML = "";
+      cons.append(el("div", { class: "empty", text: "Console: qui compaiono i messaggi di console.log e gli errori." }));
+      var inj = '<script>(function(){function s(t,a){try{parent.postMessage({pg:' + JSON.stringify(id) + ',t:t,m:Array.prototype.map.call(a,function(x){try{return typeof x==="object"?JSON.stringify(x):String(x)}catch(e){return String(x)}}).join(" ")},"*")}catch(e){}}console.log=function(){s("log",arguments)};console.error=function(){s("err",arguments)};window.alert=function(m){s("log",["alert: "+m])};window.onerror=function(m,u,l){s("err",[m+" (riga "+l+")"]);};})();<\/script>';
+      var html = /<head[^>]*>/i.test(code) ? code.replace(/<head[^>]*>/i, function (m) { return m + inj; }) : inj + code;
+      frame.srcdoc = html;
+      var allOk = true;
+      a.checks.forEach(function (c, i) {
+        var ok, rx;
+        try { rx = c.re instanceof RegExp ? c.re : new RegExp(c.re, c.f || ""); ok = rx.test(code); } catch (e) { ok = false; }
+        if (c.count && rx) { var m = code.match(new RegExp(rx.source, rx.flags.replace("g", "") + "g")); ok = !!m && m.length >= c.count; }
+        if (c.not) ok = !ok;
+        cItems[i].classList.toggle("ok", ok);
+        if (!ok && !c.extra) allOk = false;
+      });
+      if (allOk) markDone(id);
+    }
+    var tmr;
+    ta.addEventListener("input", function () { state.code[id] = ta.value; save(); clearTimeout(tmr); tmr = setTimeout(run, 700); });
+    ta.addEventListener("keydown", function (e) {
+      if (e.key === "Tab" && !e.shiftKey) {
+        e.preventDefault();
+        var s = ta.selectionStart; ta.setRangeText("  ", s, ta.selectionEnd, "end");
+        ta.dispatchEvent(new Event("input"));
+      }
+    });
+    var confirmReset = false;
+    var resetBtn = el("button", { class: "btn", text: "Ricomincia da capo", onclick: function () {
+      if (!confirmReset) { confirmReset = true; resetBtn.textContent = "Sicuro? Clicca ancora per cancellare"; setTimeout(function () { confirmReset = false; resetBtn.textContent = "Ricomincia da capo"; }, 3500); return; }
+      ta.value = a.start; delete state.code[id]; save(); run(); confirmReset = false; resetBtn.textContent = "Ricomincia da capo";
+    } });
+    var copyBtn = el("button", { class: "btn", text: "Copia il codice", onclick: function () {
+      var done = function () { copyBtn.textContent = "Copiato"; setTimeout(function () { copyBtn.textContent = "Copia il codice"; }, 1500); };
+      try { navigator.clipboard.writeText(ta.value).then(done, function () { ta.select(); copyBtn.textContent = "Testo selezionato: premi Ctrl+C"; }); }
+      catch (e) { ta.select(); copyBtn.textContent = "Testo selezionato: premi Ctrl+C"; }
+    } });
+    body.append(
+      el("div", { class: "q", html: a.q }),
+      el("div", { class: "grid" }, el("p", { class: "small", text: "Obiettivi (si spuntano da soli mentre scrivi):" }), checks),
+      el("div", { class: "ide" },
+        el("div", { class: "pane" }, el("div", { class: "pane-h" }, el("span", { text: a.file || "index.html" }), el("span", { text: "codice" })), ta),
+        el("div", { class: "pane" }, el("div", { class: "pane-h" }, el("span", { text: "Anteprima" }), el("span", { text: "si aggiorna da sola" })), frame)
+      ),
+      cons,
+      el("div", { class: "row" }, el("button", { class: "btn main", text: "Esegui di nuovo", onclick: run }), hintBtn, copyBtn, resetBtn),
+      hintBox, solBox
+    );
+    run();
+  }
+
+  /* ---------- logica del tris ---------- */
+  var LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  function winner(t) {
+    for (var k = 0; k < 8; k++) { var l = LINES[k]; if (t[l[0]] && t[l[0]] === t[l[1]] && t[l[0]] === t[l[2]]) return { w: t[l[0]], line: l }; }
+    return t.indexOf("") === -1 ? { w: "draw" } : null;
+  }
+  function mm(t, p, d) {
+    var r = winner(t);
+    if (r) return r.w === "O" ? 10 - d : r.w === "X" ? d - 10 : 0;
+    var best = p === "O" ? -99 : 99;
+    for (var i = 0; i < 9; i++) if (!t[i]) {
+      t[i] = p; var v = mm(t, p === "O" ? "X" : "O", d + 1); t[i] = "";
+      best = p === "O" ? Math.max(best, v) : Math.min(best, v);
+    }
+    return best;
+  }
+  function evalMoves(t) {
+    var out = {};
+    for (var i = 0; i < 9; i++) if (!t[i]) { t[i] = "O"; out[i] = mm(t, "X", 1); t[i] = ""; }
+    return out;
+  }
+  function freeCells(t) { var f = []; for (var i = 0; i < 9; i++) if (!t[i]) f.push(i); return f; }
+  function aiMove(t, level) {
+    var f = freeCells(t);
+    if (level === "facile" || (level === "medio" && Math.random() < 0.5)) return f[Math.floor(Math.random() * f.length)];
+    var ev = evalMoves(t), best = -999, bm = [];
+    f.forEach(function (i) { if (ev[i] > best) { best = ev[i]; bm = [i]; } else if (ev[i] === best) bm.push(i); });
+    return bm[Math.floor(Math.random() * bm.length)];
+  }
+  function sign(v) { return v > 0 ? "+1" : v < 0 ? "−1" : "0"; }
+
+  function tris(a, id, body) {
+    var levels = a.levels || ["impossibile"];
+    var names = { facile: "Facile (casuale)", medio: "Medio", impossibile: "Impossibile (minimax)" };
+    var level = a.level || levels[levels.length - 1];
+    var t, turn, over, starter = "X", games = 0, sc = { X: 0, D: 0, O: 0 }, think = false;
+    var cells = [];
+    var boardEl = el("div", { class: "board", role: "grid", "aria-label": "Tabellone del tris" });
+    for (var i = 0; i < 9; i++) (function (i) {
+      var b = el("button", { "aria-label": "Casella " + (i + 1), onclick: function () { human(i); } });
+      cells.push(b); boardEl.append(b);
+    })(i);
+    var status = el("div", { class: "status" });
+    var sx = el("b", { text: "0" }), sd = el("b", { text: "0" }), so = el("b", { text: "0" });
+    var score = el("div", { class: "score" }, el("div", {}, sx, el("span", { text: "Tu (X)" })), el("div", {}, sd, el("span", { text: "Pareggi" })), el("div", {}, so, el("span", { text: "Computer (O)" })));
+    var info = el("p", { class: "small" });
+    var side = el("div", { class: "side" }, status, score);
+    if (levels.length > 1) {
+      var seg = el("div", { class: "seg", role: "group", "aria-label": "Livello" });
+      levels.forEach(function (lv) {
+        var b = el("button", { text: names[lv], class: lv === level ? "on" : "", onclick: function () {
+          level = lv; seg.querySelectorAll("button").forEach(function (x) { x.classList.remove("on"); }); b.classList.add("on"); newGame();
+        } });
+        seg.append(b);
+      });
+      side.append(el("div", { class: "grid" }, el("span", { class: "small", text: "Livello del computer" }), seg));
+    }
+    if (a.starter) {
+      var seg2 = el("div", { class: "seg", role: "group", "aria-label": "Chi inizia" });
+      [["X", "Inizi tu"], ["O", "Inizia il computer"]].forEach(function (p) {
+        var b = el("button", { text: p[1], class: p[0] === starter ? "on" : "", onclick: function () {
+          starter = p[0]; seg2.querySelectorAll("button").forEach(function (x) { x.classList.remove("on"); }); b.classList.add("on"); newGame();
+        } });
+        seg2.append(b);
+      });
+      side.append(seg2);
+    }
+    if (a.think) {
+      var cb = el("input", { type: "checkbox", id: "think-" + id, onchange: function () { think = cb.checked; draw(); } });
+      side.append(el("label", { class: "chk", for: "think-" + id }, cb, el("span", { text: "Mostra cosa pensa il computer (punteggio minimax di ogni casella libera)" })));
+    }
+    side.append(el("div", { class: "row" }, el("button", { class: "btn main", text: "Nuova partita", onclick: newGame })), info);
+    function draw(line) {
+      var ev = think && !over && turn === "X" ? evalMoves(t.slice()) : null;
+      cells.forEach(function (c, i) {
+        c.className = t[i] || ""; c.textContent = t[i];
+        if (line && line.indexOf(i) > -1) c.classList.add("win");
+        if (ev && !t[i]) {
+          // dal punto di vista di O: cosa succede se X gioca qui
+          var tt = t.slice(); tt[i] = "X"; var v = winner(tt) ? (winner(tt).w === "X" ? -1 : 0) : mm(tt, "O", 1);
+          c.append(el("span", { class: "ev " + (v > 0 ? "p" : v < 0 ? "m" : "z"), text: sign(v) }));
+        }
+      });
+      sx.textContent = sc.X; sd.textContent = sc.D; so.textContent = sc.O;
+      var need = a.need || 1;
+      info.textContent = "Partite giocate: " + games + (games < need ? " (per completare l'attività: " + need + ")" : "");
+    }
+    function end(r) {
+      over = true; games++;
+      if (r.w === "draw") { sc.D++; status.textContent = "Pareggio"; }
+      else if (r.w === "X") { sc.X++; status.textContent = "Hai vinto tu"; }
+      else { sc.O++; status.textContent = "Ha vinto il computer"; }
+      draw(r.line);
+      if (games >= (a.need || 1)) markDone(id);
+    }
+    function play(i, p) {
+      t[i] = p; var r = winner(t);
+      if (r) { end(r); return; }
+      turn = p === "X" ? "O" : "X";
+      status.textContent = turn === "X" ? "Tocca a te (X)" : "Il computer pensa...";
+      draw();
+      if (turn === "O") setTimeout(function () { if (!over) play(aiMove(t, level), "O"); }, 450);
+    }
+    function human(i) { if (over || turn !== "X" || t[i]) return; play(i, "X"); }
+    function newGame() {
+      t = ["", "", "", "", "", "", "", "", ""]; over = false; turn = starter;
+      status.textContent = turn === "X" ? "Tocca a te (X)" : "Il computer pensa...";
+      draw();
+      if (turn === "O") setTimeout(function () { play(aiMove(t, level), "O"); }, 450);
+    }
+    body.append(el("div", { class: "q", html: a.q }), el("div", { class: "tris" }, boardEl, side));
+    if (a.after) body.append(el("div", { class: "text", html: a.after }));
+    newGame();
+  }
+
+  /* ---------- trova le linee vincenti ---------- */
+  function combos(a, id, body) {
+    var sel = [], found = [];
+    var boardEl = el("div", { class: "board pick" });
+    var cells = [];
+    for (var i = 0; i < 9; i++) (function (i) {
+      var b = el("button", { text: String(i), "aria-label": "Casella " + i, onclick: function () { pick(i); } });
+      cells.push(b); boardEl.append(b);
+    })(i);
+    var fb = el("div", { class: "small", text: "Seleziona 3 caselle in fila." });
+    var count = el("div", { class: "status", text: "0 su 8" });
+    var foundEl = el("div", { class: "found" });
+    function mini(l) { var m = el("div", { class: "mini", title: "[" + l.join(", ") + "]" }); for (var k = 0; k < 9; k++) m.append(el("i", { class: l.indexOf(k) > -1 ? "on" : "" })); return el("div", { class: "grid" }, m, el("code", { text: "[" + l.join(",") + "]" })); }
+    function pick(i) {
+      var k = sel.indexOf(i);
+      if (k > -1) sel.splice(k, 1); else sel.push(i);
+      cells.forEach(function (c, j) { c.classList.toggle("on", sel.indexOf(j) > -1); });
+      if (sel.length === 3) {
+        var s = sel.slice().sort(function (x, y) { return x - y; });
+        var key = s.join(",");
+        var isLine = LINES.some(function (l) { return l.slice().sort(function (x, y) { return x - y; }).join(",") === key; });
+        if (!isLine) fb.textContent = "Queste tre caselle non formano una linea. Riprova.";
+        else if (found.indexOf(key) > -1) fb.textContent = "Questa linea l'hai già trovata.";
+        else {
+          found.push(key); foundEl.append(mini(s));
+          count.textContent = found.length + " su 8";
+          fb.textContent = found.length === 8 ? "Le hai trovate tutte: 3 righe, 3 colonne, 2 diagonali." : "Trovata. Ne mancano " + (8 - found.length) + ".";
+          if (found.length === 8) markDone(id);
+        }
+        setTimeout(function () { sel = []; cells.forEach(function (c) { c.classList.remove("on"); }); }, 350);
+      }
+    }
+    body.append(el("div", { class: "q", html: a.q }), el("div", { class: "combo" }, boardEl, el("div", { class: "side" }, count, fb, foundEl)));
+    if (state.done[id]) { LINES.forEach(function (l) { foundEl.append(mini(l)); }); found = LINES.map(function (l) { return l.slice().sort().join(","); }); count.textContent = "8 su 8"; }
+  }
+
+  /* ---------- risali l'albero ---------- */
+  function build(board, p, move) {
+    var n = { b: board.slice(), p: p, move: move, kids: [] };
+    var r = winner(board);
+    if (r) { n.leaf = true; n.v = r.w === "O" ? 1 : r.w === "X" ? -1 : 0; n.res = r.w; return n; }
+    for (var i = 0; i < 9; i++) if (!board[i]) { board[i] = p; n.kids.push(build(board, p === "O" ? "X" : "O", i)); board[i] = ""; }
+    var vs = n.kids.map(function (k) { return k.v; });
+    n.v = p === "O" ? Math.max.apply(null, vs) : Math.min.apply(null, vs);
+    return n;
+  }
+  function tree(a, id, body) {
+    var solved = 0;
+    body.append(el("div", { class: "q", html: a.q }));
+    a.boards.forEach(function (bd, bi) {
+      var root = build(bd.b.split("").map(function (c) { return c === "." ? "" : c; }), bd.p, -1);
+      var slots = [];
+      function mb(n) {
+        var m = el("div", { class: "mb", "aria-label": "Tabellone" });
+        for (var k = 0; k < 9; k++) m.append(el("i", { class: (n.b[k] || "") + (k === n.move ? " last" : ""), text: n.b[k] }));
+        return m;
+      }
+      function render(n) {
+        var node = el("div", { class: "node" });
+        n.el = node;
+        node.append(mb(n));
+        if (n.leaf) {
+          node.append(el("div", { class: "val leaf", text: sign(n.v), title: n.res === "draw" ? "pareggio" : "vince " + n.res }));
+          node.append(el("div", { class: "small", text: n.res === "draw" ? "pareggio" : "vince " + n.res }));
+        } else {
+          node.append(el("div", { class: "who " + (n.p === "O" ? "max" : "min"), text: n.p === "O" ? "MAX: tocca a O" : "MIN: tocca a X" }));
+          var cyc = ["?", "+1", "0", "−1"], k = 0;
+          var b = el("button", { class: "val", text: "?", "aria-label": "Valore del nodo", onclick: function () { k = (k + 1) % 4; if (k === 0) k = 1; b.textContent = cyc[k]; b.classList.remove("ok", "bad"); } });
+          b._n = n; slots.push(b); node.append(b);
+          var kids = el("div", { class: "kids" });
+          n.kids.forEach(function (c) { kids.append(el("div", { class: "kid" }, render(c))); });
+          node.append(kids);
+        }
+        return node;
+      }
+      var fb = el("div");
+      var holder = el("div", { class: "treebox" }, el("div", { class: "tree" }, render(root)));
+      var done = false;
+      var check = el("button", { class: "btn main", text: "Controlla l'albero", onclick: function () {
+        if (done) return;
+        var bad = 0, empty = 0;
+        slots.forEach(function (s) {
+          if (s.textContent === "?") { empty++; return; }
+          var ok = s.textContent === sign(s._n.v);
+          s.classList.toggle("ok", ok); s.classList.toggle("bad", !ok); if (!ok) bad++;
+        });
+        if (empty) { fb.className = "nope"; fb.textContent = "Ci sono ancora " + empty + " nodi con il punto di domanda. Parti dal basso."; return; }
+        if (bad) { fb.className = "nope"; fb.textContent = bad + " valori non tornano (in rosso). Ricorda: MAX prende il più grande dei figli, MIN il più piccolo."; return; }
+        done = true;
+        var best = root.kids.filter(function (c) { return c.v === root.v; })[0];
+        best.el.classList.add("best");
+        fb.className = "why"; fb.innerHTML = (bd.why || "") + " La mossa migliore per O è quella evidenziata: vale <b>" + sign(root.v) + "</b>.";
+        solved++; if (solved === a.boards.length) markDone(id);
+      } });
+      body.append(el("div", { class: "text", html: "<b>Albero " + (bi + 1) + ".</b> " + bd.t }), holder, el("div", { class: "row" }, check), fb);
+      if (state.done[id]) {
+        slots.forEach(function (s) { s.textContent = sign(s._n.v); s.classList.add("ok"); });
+        done = true; solved++;
+        root.kids.filter(function (c) { return c.v === root.v; })[0].el.classList.add("best");
+      }
+    });
+  }
+
+  var RENDER = { quiz: quiz, match: match, order: order, fill: fill, bug: bug, play: play, tris: tris, combos: combos, tree: tree };
+
+  /* ---------- pagina ---------- */
+  function page() {
+    meterBar = el("i"); meterTxt = el("span", { text: "0/0" });
+    var bar = el("div", { class: "bar" }, el("div", { class: "wrap" },
+      el("div", { class: "bar-title", text: "Lezione " + L.n + " · " + L.title }),
+      el("div", { class: "bar-prog" }, el("span", { class: "lbl", text: "Attività" }), el("div", { class: "meter" }, meterBar), meterTxt)));
+    var track = el("div", { class: "track", "aria-label": "Lezioni del corso" });
+    var SA = !!window.STANDALONE;
+    function href(k) { return "lezione-" + (k < 10 ? "0" : "") + k + ".html"; }
+    for (var i = 1; i <= 10; i++) track.append(el(SA ? "a" : "span", { class: i < L.n ? "past" : i === L.n ? "now" : "", text: String(i), title: "Lezione " + i, href: SA ? href(i) : null }));
+    var total = L.phases.reduce(function (s, p) { return s + p.min; }, 0);
+    var hero = el("header", { class: "hero" }, el("div", { class: "wrap" },
+      el("div", { class: "eyebrow", text: "Corso Web & AI · Dal sito al tris imbattibile" }),
+      track,
+      el("h1", {}, el("span", { class: "n", text: "Lezione " + L.n + " di 10" }), L.title),
+      el("p", { class: "lead", html: L.lead }),
+      el("div", { class: "goal" },
+        el("div", {}, el("h2", { text: "Oggi imparerai" }), el("ul", {}, L.learn.map(function (x) { return el("li", { html: x }); }))),
+        el("div", {}, el("h2", { text: "Il percorso di oggi" }),
+          el("ul", { class: "plan" }, L.phases.map(function (p, k) { return el("li", {}, el("span", { text: (k + 1) + ". " + p.title }), el("b", { text: p.min + " min" })); })),
+          el("p", { class: "small", style: "margin-top:8px", text: "Totale: " + total + " minuti. I progressi si salvano in questo browser." })))
+    ));
+    var main = el("main", { class: "wrap" });
+    L.phases.forEach(function (p, pi) {
+      var sec = el("section", { class: "phase", id: "fase-" + (pi + 1) },
+        el("div", { class: "phase-head" }, el("span", { class: "k", text: "Fase " + (pi + 1) }), el("span", { class: "min", text: p.min + " minuti" }), el("h2", { text: p.title })));
+      if (p.body) sec.append(el("div", { class: "text", html: p.body }));
+      if (p.code) sec.append(el("pre", { class: "ex", text: p.code }));
+      if (p.body2) sec.append(el("div", { class: "text", html: p.body2 }));
+      if (p.tip) sec.append(el("div", { class: "tip" }, el("span", { class: "tag", text: "Consiglio" }), el("div", { html: p.tip })));
+      (p.acts || []).forEach(function (a, ai) {
+        var id = (pi + 1) + "-" + (ai + 1);
+        var st = el("span", { class: "act-state" }, el("span", { class: "dot" }), el("span", { text: state.done[id] ? "Completata" : "Da fare" }));
+        var box = el("div", { class: "act" + (state.done[id] ? " done" : "") }, el("div", { class: "act-head" }, el("span", { class: "act-type", text: a.label || TYPE[a.type] }), st));
+        acts.push({ id: id, box: box, stateEl: st });
+        RENDER[a.type](a, id, box);
+        sec.append(box);
+      });
+      main.append(sec);
+    });
+    badgeBox = el("div", { class: "badge" }, el("div", { class: "stamp", text: "0%" }),
+      el("div", {}, el("h2", { text: "" }), el("p", { class: "small", text: "Riassunto della lezione:" }), el("ul", {}, L.recap.map(function (x) { return el("li", { html: x }); }))));
+    var armed = false;
+    var resetAll = el("button", { class: "btn reset", text: "Azzera i progressi di questa lezione", onclick: function () {
+      if (!armed) { armed = true; resetAll.textContent = "Sicuro? Clicca di nuovo per azzerare tutto"; setTimeout(function () { armed = false; resetAll.textContent = "Azzera i progressi di questa lezione"; }, 3500); return; }
+      try { localStorage.removeItem(KEY); } catch (e) {}
+      location.reload();
+    } });
+    var end = el("footer", { class: "end wrap" }, badgeBox,
+      el("div", { class: "next" }, el("p", { html: L.next }), resetAll),
+      SA ? el("nav", { class: "pager" },
+        L.n > 1 ? el("a", { class: "btn", href: href(L.n - 1), text: "Lezione " + (L.n - 1) }) : el("span"),
+        el("a", { class: "btn", href: "index.html", text: "Tutte le lezioni" }),
+        L.n < 10 ? el("a", { class: "btn main", href: href(L.n + 1), text: "Lezione " + (L.n + 1) }) : el("span")) : null);
+    document.body.append(bar, hero, main, end);
+    updateProgress();
+  }
+  page();
+})();
+
+</script>
+</body>
+</html>

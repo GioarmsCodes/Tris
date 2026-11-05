@@ -297,14 +297,149 @@ label.chk { display: flex; gap: 8px; align-items: center; font-size: 15px; }
 .idx h2 { font-size: 21px; }
 .idx p { color: var(--muted); font-size: 15px; }
 
+/* Dashboard */
+.dash { display: grid; gap: 18px; padding-block: 0 24px; }
+.sum { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: var(--card); border: 2px solid var(--ink); border-radius: 10px; overflow: hidden; }
+.sum > div { padding: 14px 18px; border-right: 2px solid var(--ink); }
+.sum > div:last-child { border-right: 0; }
+.sum b { display: block; font-family: var(--display); font-size: 34px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.sum span { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
+.strip { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
+.strip i { height: 14px; border: 2px solid var(--ink); border-radius: 4px; background: linear-gradient(90deg, var(--x) var(--p), var(--paper) var(--p)); }
+.strip i.full { background: var(--ok); border-color: var(--ok); }
+.hello { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.hello input { font: inherit; border: 2px solid var(--ink); border-radius: 8px; padding: 6px 10px; background: var(--card); color: var(--ink); min-width: 0; width: 220px; }
+.resume { display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; background: color-mix(in srgb, var(--hl) 38%, var(--card)); border: 1px solid color-mix(in srgb, var(--hl) 70%, var(--line)); border-radius: 10px; padding: 14px 18px; }
+.resume p { font-weight: 700; }
+.idx a { grid-template-columns: 56px minmax(0, 1fr) 150px; }
+.idx a.cur { border-color: var(--ink); box-shadow: 4px 4px 0 var(--ink); }
+.idx a.full .num { color: var(--ok); }
+.lp { display: grid; gap: 6px; justify-items: end; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.lp .meter { width: 100%; }
+.lp .meter i { width: var(--p); }
+.chip { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 1px 8px; border-radius: 999px; border: 2px solid var(--line); color: var(--muted); }
+.chip.go { border-color: var(--x); color: var(--x); }
+.chip.ok { border-color: var(--ok); color: var(--ok); background: var(--ok-bg); }
+.idx-foot { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; padding-bottom: 60px; }
+@media (max-width: 720px) {
+  .sum { grid-template-columns: 1fr; }
+  .sum > div { border-right: 0; border-bottom: 2px solid var(--ink); }
+  .sum > div:last-child { border-bottom: 0; }
+  .idx a { grid-template-columns: 40px minmax(0, 1fr); }
+  .lp { grid-column: 1 / -1; justify-items: stretch; }
+}
+.idx a.full .lp .meter i { background: var(--ok); }
+
 </style>
 </head>
 <body>
 <header class="hero"><div class="wrap">
-<div class="eyebrow">Corso Web &amp; AI</div>
+<div class="eyebrow">Corso Web &amp; AI · Dal sito al tris imbattibile</div>
 <h1 style="margin-top:14px">Tris Lab</h1>
 <p class="lead">Dieci lezioni da 90 minuti: dalla prima pagina HTML a un tris con un'intelligenza artificiale che non perde mai.</p>
 </div></header>
-<main class="wrap"><nav class="idx"><a href="lezione-01.html"><span class="num">1</span><span><h2>Primo sito</h2><p>HTML, tag e scheletro della pagina: la pagina Chi sono.</p></span></a><a href="lezione-02.html"><span class="num">2</span><span><h2>Diamo colore</h2><p>Regole CSS, selettori e proprietà.</p></span></a><a href="lezione-03.html"><span class="num">3</span><span><h2>La griglia</h2><p>Div, classi e CSS Grid: il tabellone del tris.</p></span></a><a href="lezione-04.html"><span class="num">4</span><span><h2>Il primo click</h2><p>Variabili, console ed eventi: le caselle reagiscono.</p></span></a><a href="lezione-05.html"><span class="num">5</span><span><h2>X e O</h2><p>Array, if/else e turni: il tris a due giocatori.</p></span></a><a href="lezione-06.html"><span class="num">6</span><span><h2>Chi ha vinto</h2><p>Linee vincenti, cicli e la funzione arbitro.</p></span></a><a href="lezione-07.html"><span class="num">7</span><span><h2>Il computer gioca</h2><p>Funzioni e numeri casuali: il computer gioca a caso.</p></span></a><a href="lezione-08.html"><span class="num">8</span><span><h2>Pensare in avanti</h2><p>L'albero delle mosse, MAX e MIN, senza codice.</p></span></a><a href="lezione-09.html"><span class="num">9</span><span><h2>Minimax</h2><p>Ricorsione e minimax: il tris diventa imbattibile.</p></span></a><a href="lezione-10.html"><span class="num">10</span><span><h2>Il torneo finale</h2><p>Debug, livelli di difficoltà e torneo finale.</p></span></a></nav></main>
+<main class="wrap">
+<section class="dash" id="dash"></section>
+<nav class="idx" id="idx"></nav>
+<div class="idx-foot"><p class="small">I progressi sono salvati in questo browser, su questo computer. Usa sempre lo stesso PC e lo stesso browser.</p><button class="btn reset" id="reset">Azzera tutti i progressi</button></div>
+</main>
+<script>window.TRIS_META = [{"n": 1, "t": "Primo sito", "d": "HTML, tag e scheletro della pagina: la pagina Chi sono.", "tot": 8}, {"n": 2, "t": "Diamo colore", "d": "Regole CSS, selettori e proprietà.", "tot": 6}, {"n": 3, "t": "La griglia", "d": "Div, classi e CSS Grid: il tabellone del tris.", "tot": 6}, {"n": 4, "t": "Il primo click", "d": "Variabili, console ed eventi: le caselle reagiscono.", "tot": 6}, {"n": 5, "t": "X e O", "d": "Array, if/else e turni: il tris a due giocatori.", "tot": 7}, {"n": 6, "t": "Chi ha vinto", "d": "Linee vincenti, cicli e la funzione arbitro.", "tot": 7}, {"n": 7, "t": "Il computer gioca", "d": "Funzioni e numeri casuali: il computer gioca a caso.", "tot": 7}, {"n": 8, "t": "Pensare in avanti", "d": "L'albero delle mosse, MAX e MIN, senza codice.", "tot": 7}, {"n": 9, "t": "Minimax", "d": "Ricorsione e minimax: il tris diventa imbattibile.", "tot": 7}, {"n": 10, "t": "Il torneo finale", "d": "Debug, livelli di difficoltà e torneo finale.", "tot": 7}];</script>
+<script>
+(function () {
+  "use strict";
+  var META = window.TRIS_META;
+  var NAME_KEY = "corso-tris-nome";
+  function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function del(k) { try { localStorage.removeItem(k); } catch (e) {} }
+  function el(tag, attrs) {
+    var e = document.createElement(tag);
+    for (var k in (attrs || {})) {
+      var v = attrs[k]; if (v == null) continue;
+      if (k === "class") e.className = v; else if (k === "text") e.textContent = v; else if (k === "html") e.innerHTML = v;
+      else if (k === "style") e.setAttribute("style", v); else if (k.slice(0, 2) === "on") e.addEventListener(k.slice(2), v); else e.setAttribute(k, v);
+    }
+    for (var i = 2; i < arguments.length; i++) { var c = arguments[i]; if (c == null) continue; if (Array.isArray(c)) c.forEach(function (x) { x && e.append(x); }); else e.append(c); }
+    return e;
+  }
+  function href(n) { return "lezione-" + (n < 10 ? "0" : "") + n + ".html"; }
+  function when(ts) {
+    if (!ts) return "";
+    var d = new Date(ts), now = new Date();
+    var days = Math.floor((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 864e5);
+    if (days === 0) return "oggi";
+    if (days === 1) return "ieri";
+    if (days < 7) return days + " giorni fa";
+    return d.toLocaleDateString("it-IT", { day: "numeric", month: "short" });
+  }
+
+  function read() {
+    return META.map(function (m) {
+      var s = null;
+      try { s = JSON.parse(get("corso-tris-lezione-" + m.n) || "null"); } catch (e) {}
+      var done = s && s.done ? Object.keys(s.done).filter(function (k) { return s.done[k]; }).length : 0;
+      done = Math.min(done, m.tot);
+      return { n: m.n, t: m.t, d: m.d, tot: m.tot, done: done, last: s && s.last, pct: Math.round(100 * done / m.tot) };
+    });
+  }
+
+  function render() {
+    var L = read();
+    var dash = document.getElementById("dash"), idx = document.getElementById("idx");
+    dash.innerHTML = ""; idx.innerHTML = "";
+    var full = L.filter(function (l) { return l.done === l.tot; }).length;
+    var actDone = L.reduce(function (s, l) { return s + l.done; }, 0);
+    var actTot = L.reduce(function (s, l) { return s + l.tot; }, 0);
+    var cur = L.filter(function (l) { return l.done < l.tot; })[0];
+    var lastTs = L.reduce(function (m, l) { return Math.max(m, l.last || 0); }, 0);
+
+    var name = get(NAME_KEY) || "";
+    var inp = el("input", { type: "text", id: "nome", maxlength: "30", placeholder: "Scrivi il tuo nome", value: name, "aria-label": "Il tuo nome",
+      oninput: function () { set(NAME_KEY, inp.value.trim()); greet.textContent = inp.value.trim() ? "Ciao " + inp.value.trim() + "." : "Ciao."; } });
+    var greet = el("h2", { text: name ? "Ciao " + name + "." : "Ciao.", style: "font-size:26px" });
+    dash.append(el("div", { class: "hello" }, greet, inp));
+
+    dash.append(el("div", { class: "sum" },
+      el("div", {}, el("b", { text: full + "/10" }), el("span", { text: "Lezioni completate" })),
+      el("div", {}, el("b", { text: Math.round(100 * actDone / actTot) + "%" }), el("span", { text: "Attività svolte: " + actDone + " su " + actTot })),
+      el("div", {}, el("b", { text: lastTs ? when(lastTs) : "mai" }), el("span", { text: "Ultimo lavoro" }))));
+
+    dash.append(el("div", { class: "strip", "aria-hidden": "true" }, L.map(function (l) {
+      return el("i", { class: l.done === l.tot ? "full" : "", style: "--p:" + l.pct + "%", title: "Lezione " + l.n + ": " + l.pct + "%" });
+    })));
+
+    if (cur) {
+      var started = cur.done > 0;
+      dash.append(el("div", { class: "resume" },
+        el("p", { text: (started ? "Riprendi da qui: " : (full ? "Prossima lezione: " : "Comincia da qui: ")) + "lezione " + cur.n + ", " + cur.t + (started ? " (" + cur.done + " attività su " + cur.tot + ")" : "") }),
+        el("a", { class: "btn main", href: href(cur.n), text: started ? "Continua" : "Inizia", style: "text-decoration:none" })));
+    } else {
+      dash.append(el("div", { class: "resume" }, el("p", { text: "Hai completato tutto il corso. Il tuo tris è imbattibile: ora sfida qualcuno a casa." })));
+    }
+
+    L.forEach(function (l) {
+      var st = l.done === l.tot ? ["ok", "Completata"] : l.done > 0 ? ["go", "In corso"] : ["", "Da fare"];
+      idx.append(el("a", { href: href(l.n), class: (l.done === l.tot ? "full" : "") + (cur && cur.n === l.n ? " cur" : "") },
+        el("span", { class: "num", text: String(l.n) }),
+        el("span", {}, el("h2", { text: l.t }), el("p", { text: l.d })),
+        el("span", { class: "lp" },
+          el("span", { class: "chip " + st[0], text: st[1] }),
+          el("span", { class: "meter", style: "--p:" + l.pct + "%" }, el("i")),
+          el("span", { text: l.done + "/" + l.tot + " attività" + (l.last ? " · " + when(l.last) : "") }))));
+    });
+  }
+
+  var armed = false, rb = document.getElementById("reset");
+  rb.addEventListener("click", function () {
+    if (!armed) { armed = true; rb.textContent = "Sicuro? Clicca di nuovo per cancellare tutto"; setTimeout(function () { armed = false; rb.textContent = "Azzera tutti i progressi"; }, 3500); return; }
+    META.forEach(function (m) { del("corso-tris-lezione-" + m.n); });
+    armed = false; rb.textContent = "Azzera tutti i progressi"; render();
+  });
+  window.addEventListener("pageshow", render);
+  window.addEventListener("storage", render);
+  render();
+})();
+
+</script>
 </body>
 </html>
